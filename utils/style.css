@@ -1,0 +1,227 @@
+/* utils/style.css */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Instrument+Serif:ital@0;1&display=swap');
+
+:root {
+  --bg:        #090e0a;
+  --surface:   #0e1610;
+  --card:      #111a13;
+  --border:    #1e2e20;
+  --green:     #3dffa0;
+  --green-dim: #1a7a4a;
+  --green-glow:#3dffa022;
+  --amber:     #f5c842;
+  --red:       #ff5e5e;
+  --text:      #e8f0ea;
+  --muted:     #6b8870;
+  --mono:      'DM Mono', monospace;
+  --serif:     'Instrument Serif', serif;
+  --sans:      'Syne', sans-serif;
+}
+
+/* Base App Colors */
+.stApp {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+}
+
+/* Default markdown tags */
+.stMarkdown p {
+    font-family: var(--sans) !important;
+    color: var(--text) !important;
+    font-size: 1.05rem;
+    line-height: 1.7;
+}
+
+/* Typography Overrides */
+h1 {
+  font-family: var(--sans) !important;
+  font-size: clamp(3rem, 6vw, 5rem) !important;
+  font-weight: 800 !important;
+  line-height: 0.92 !important;
+  letter-spacing: -0.04em !important;
+  margin-bottom: 0.3em !important;
+  color: var(--text) !important;
+}
+
+h2, h3, h4, h5, h6 {
+  font-family: var(--sans) !important;
+  color: var(--text) !important;
+  font-weight: 800 !important;
+}
+
+h1 em {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 400;
+    color: var(--green);
+}
+
+/* Sidebar */
+section[data-testid="stSidebar"] {
+  background-color: var(--surface) !important;
+  border-right: 1px solid var(--border) !important;
+}
+section[data-testid="stSidebar"] * {
+    font-family: var(--sans);
+    color: var(--text);
+}
+
+/* Form Elements */
+.stTextArea textarea {
+  background-color: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--green) !important;
+  font-family: var(--mono) !important;
+  border-radius: 4px !important;
+}
+
+div[data-baseweb="select"] > div {
+    background-color: var(--card) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+}
+
+/* Buttons */
+button[kind="primary"] {
+  background: var(--green) !important;
+  color: var(--bg) !important;
+  border: none !important;
+  padding: 0.85rem 2.2rem !important;
+  font-family: var(--sans) !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%) !important;
+  transition: transform 0.2s, box-shadow 0.2s !important;
+  border-radius: 0 !important;
+}
+button[kind="primary"]:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 40px var(--green-glow) !important;
+}
+
+/* Metric Cards */
+.metrics-strip {
+    display: flex; gap: 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+.metric-item {
+    flex: 1;
+    padding: 2rem;
+    border-right: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s;
+    background: var(--bg);
+}
+.metric-item:last-child { border-right: none; }
+.metric-item:hover { background: var(--surface); }
+.metric-item::before {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--green);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+}
+.metric-item:hover::before { transform: scaleX(1); }
+.metric-num {
+    font-size: 2.5rem; font-weight: 800; color: var(--green);
+    line-height: 1; letter-spacing: -0.04em; font-family: var(--sans);
+}
+.metric-label { font-size: 0.8rem; color: var(--muted); margin-top: 0.4rem; text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--mono); }
+
+/* Results Table */
+.results-table {
+    border: 1px solid var(--border);
+    overflow: hidden;
+    background: var(--bg);
+}
+.rt-header {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 0.8rem 1.2rem;
+    font-family: var(--mono); font-size: 0.7rem;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em;
+}
+.rt-row {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+    padding: 0.9rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono); font-size: 0.8rem;
+    transition: background 0.2s;
+    color: var(--text);
+}
+.rt-row:last-child { border-bottom: none; }
+.rt-row:hover { background: var(--surface); }
+.rt-model { font-family: var(--mono); }
+
+/* Noise and Grid Overlays - done via CSS */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.6;
+}
+.stApp::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+}
+
+.win-badge {
+    display: inline-block;
+    background: var(--green);
+    color: var(--bg);
+    font-size: 0.6rem;
+    padding: 0.1rem 0.4rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin-left: 0.4rem;
+    font-family: var(--mono);
+}
+
+/* Hide empty space above title */
+.block-container {
+    padding-top: 3rem !important;
+    position: relative;
+    z-index: 10;
+}
+
+.hero-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    border: 1px solid var(--green-dim);
+    background: var(--green-glow);
+    padding: 0.35rem 1rem;
+    font-family: var(--mono); font-size: 0.75rem; color: var(--green);
+    letter-spacing: 0.08em;
+    margin-bottom: 2rem;
+}
+.badge-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    animation: blink 1.5s ease infinite;
+}
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+
+.hero-sub {
+    font-size: 1.05rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin: 1.5rem 0 2.5rem;
+}

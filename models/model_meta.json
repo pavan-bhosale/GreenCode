@@ -1,0 +1,43 @@
+{
+  "feature_keys": [
+    "sloc",
+    "lloc",
+    "function_count",
+    "class_count",
+    "loop_count",
+    "max_loop_depth",
+    "nested_loop_count",
+    "conditional_count",
+    "try_except_count",
+    "list_comprehensions",
+    "io_operations",
+    "network_calls",
+    "heavy_math_imports",
+    "recursion_candidates",
+    "avg_complexity",
+    "max_complexity",
+    "total_complexity",
+    "halstead_volume",
+    "halstead_difficulty",
+    "halstead_effort",
+    "maintainability_index",
+    "computational_intensity"
+  ],
+  "metrics": {
+    "n_samples": 2000,
+    "n_train": 1600,
+    "n_test": 400,
+    "physics_only": {
+      "mape": 2946.21,
+      "r2": -47318.5418
+    },
+    "hybrid_model": {
+      "mape": 15703.52,
+      "r2": -84716.7517
+    },
+    "improvement": {
+      "mape_reduction_pct": -433.0,
+      "r2_improvement": -37398.21
+    }
+  }
+}

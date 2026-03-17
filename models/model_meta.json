@@ -23,21 +23,29 @@
     "maintainability_index",
     "computational_intensity"
   ],
+  "n_features": 22,
   "metrics": {
-    "n_samples": 2000,
-    "n_train": 1600,
-    "n_test": 400,
+    "n_samples": 10000,
+    "n_train": 8000,
+    "n_test": 2000,
     "physics_only": {
-      "mape": 2946.21,
-      "r2": -47318.5418
+      "smape": 200.0,
+      "mae_joules": 10.964111
     },
     "hybrid_model": {
-      "mape": 15703.52,
-      "r2": -84716.7517
+      "train_smape": 66.16,
+      "test_smape": 68.35,
+      "train_mae_j": 2.645332,
+      "test_mae_j": 3.238441,
+      "train_r2": 0.9236,
+      "test_r2": 0.8681
     },
     "improvement": {
-      "mape_reduction_pct": -433.0,
-      "r2_improvement": -37398.21
+      "smape_reduction_pct": 131.65,
+      "mae_reduction_j": 7.725671
     }
-  }
+  },
+  "model_type": "Pipeline(StandardScaler + XGBRegressor)",
+  "target": "residual_joules",
+  "note": "Model predicts E_residual = E_true - E_physics. Hybrid = Physics + Residual."
 }

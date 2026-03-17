@@ -7,6 +7,7 @@ and radon metrics. Produces a feature vector used by the prediction engine.
 
 import ast
 import math
+import re
 from collections import defaultdict
 from radon.complexity import cc_visit
 from radon.metrics import h_visit, mi_visit
@@ -282,6 +283,154 @@ def _safe_raw_metrics(code: str) -> dict:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Regex-based Fallback Analyzer (works on any text file)
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _fallback_analyze(code: str) -> dict:
+    """
+    Regex/heuristic feature extractor that works on ANY text-readable source
+    file (JS, TS, Go, Rust, HTML, CSS, JSON, Markdown, etc.).
+    Returns the same feature dictionary shape as the AST-based analyzer.
+    """
+    lines = code.splitlines()
+    non_empty = [l for l in lines if l.strip()]
+    sloc = len(non_empty)
+    loc = len(lines)
+    blank_lines = loc - sloc
+    comment_lines = sum(1 for l in lines if l.strip().startswith(('#', '//', '/*', '*', '<!--')))
+
+    # ── Loop keywords ────────────────────────────────────────────────
+    loop_patterns = re.findall(
+        r'\b(for|while|forEach|do)\b', code
+    )
+    loop_count = len(loop_patterns)
+
+    # Estimate nesting depth via indentation
+    max_indent = 0
+    for line in non_empty:
+        stripped = line.lstrip()
+        indent = len(line) - len(stripped)
+        # Normalize tabs to 4 spaces
+        indent = indent if '\t' not in line else line.count('\t') * 4 + (len(line) - len(line.lstrip())).bit_length()
+        max_indent = max(max_indent, indent)
+    estimated_max_depth = min(max_indent // 4, 10)  # rough nesting depth
+
+    nested_loop_count = max(0, loop_count - 1) if loop_count > 1 else 0
+
+    # ── Function keywords ────────────────────────────────────────────
+    func_patterns = re.findall(
+        r'\b(def|function|fn|func|=>|->)\b|=>',
+        code
+    )
+    function_count = len(func_patterns)
+
+    # ── Class keywords ───────────────────────────────────────────────
+    class_count = len(re.findall(r'\b(class|struct|interface|enum)\b', code))
+
+    # ── Conditional keywords ─────────────────────────────────────────
+    conditional_count = len(re.findall(r'\b(if|else|elif|switch|case|\?)\b', code))
+
+    # ── I/O keywords ─────────────────────────────────────────────────
+    io_patterns = re.findall(
+        r'\b(open|read|write|readFile|writeFile|readlines|writelines|'
+        r'print|println|console\.log|fprintf|fwrite|fread|'
+        r'fs\.|iostream|fstream|Scanner|BufferedReader)\b',
+        code
+    )
+    io_operations = len(io_patterns)
+
+    # ── Network keywords ─────────────────────────────────────────────
+    net_patterns = re.findall(
+        r'\b(fetch|axios|http|https|request|xhr|XMLHttpRequest|'
+        r'socket|websocket|grpc|aiohttp|urllib|httpx)\b',
+        code, re.IGNORECASE
+    )
+    network_calls = len(net_patterns)
+
+    # ── Heavy compute keywords ───────────────────────────────────────
+    heavy_math = len(re.findall(
+        r'\b(numpy|scipy|pandas|torch|tensorflow|sklearn|xgboost|'
+        r'math\.|Math\.|BigInt|Float64Array)\b', code
+    ))
+
+    # ── Try/catch ────────────────────────────────────────────────────
+    try_except_count = len(re.findall(r'\b(try|catch|except|finally)\b', code))
+
+    # ── Comprehension & lambda estimates ─────────────────────────────
+    list_comprehensions = len(re.findall(r'\[.*\bfor\b.*\bin\b.*\]', code))
+    lambda_count = len(re.findall(r'\blambda\b|=>\s*[{(]', code))
+
+    # ── Async keywords ───────────────────────────────────────────────
+    yield_count = len(re.findall(r'\byield\b', code))
+    await_count = len(re.findall(r'\bawait\b', code))
+
+    # ── Computational intensity ──────────────────────────────────────
+    intensity = min(100, (
+        loop_count * 10
+        + nested_loop_count * 20
+        + estimated_max_depth * 5
+        + heavy_math * 15
+        + (1.0 * 3)  # default avg_complexity for fallback
+    ))
+
+    # ── Workload type ────────────────────────────────────────────────
+    if network_calls > 0:
+        workload_type = "network"
+    elif io_operations >= 3:
+        workload_type = "io_heavy"
+    elif heavy_math > 0 or intensity > 50:
+        workload_type = "cpu_heavy"
+    elif sloc < 10:
+        workload_type = "trivial"
+    else:
+        workload_type = "mixed"
+
+    return {
+        # Structure
+        "function_count": function_count,
+        "class_count": class_count,
+        "loop_count": loop_count,
+        "max_loop_depth": min(estimated_max_depth, loop_count + 1),
+        "nested_loop_count": nested_loop_count,
+        "conditional_count": conditional_count,
+        "try_except_count": try_except_count,
+        "list_comprehensions": list_comprehensions,
+        "dict_comprehensions": 0,
+        "generator_expressions": 0,
+        "lambda_count": lambda_count,
+        "decorator_count": 0,
+        "recursion_candidates": 0,
+        # I/O & Network
+        "io_operations": io_operations,
+        "network_calls": network_calls,
+        "heavy_math_imports": heavy_math,
+        # Async
+        "yield_count": yield_count,
+        "await_count": await_count,
+        # Raw metrics
+        "loc": loc,
+        "lloc": sloc,
+        "sloc": sloc,
+        "comments": comment_lines,
+        "blank_lines": blank_lines,
+        # Complexity (defaults for non-Python)
+        "avg_complexity": 1.0,
+        "max_complexity": 1,
+        "total_complexity": 1,
+        "halstead_volume": 0,
+        "halstead_difficulty": 0,
+        "halstead_effort": 0,
+        "halstead_bugs": 0,
+        "maintainability_index": 50.0,
+        # Derived
+        "computational_intensity": round(intensity, 2),
+        "workload_type": workload_type,
+        # Metadata flag
+        "_fallback_used": True,
+    }
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Public API
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -303,8 +452,9 @@ def analyze_code(code: str) -> dict:
     # Parse AST
     try:
         tree = ast.parse(code)
-    except SyntaxError as e:
-        return {"error": f"SyntaxError: {e.msg} (line {e.lineno})"}
+    except SyntaxError:
+        # AST parsing failed — use the regex-based fallback analyzer
+        return _fallback_analyze(code)
 
     # Walk AST
     visitor = CodeFeatureVisitor()

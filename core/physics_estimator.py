@@ -74,42 +74,39 @@ WORKLOAD_PROFILES = {
 def estimate_runtime_seconds(features: dict) -> float:
     """
     Estimate code runtime in seconds from static features.
-    
-    Uses a heuristic model based on code complexity, loop depth, 
-    and I/O patterns. This is a rough estimate — the ML residual 
-    model corrects for systematic errors.
+    Uses a bounded quadratic loop-depth model — never exceeds 10s.
+    IMPORTANT: Must match the formula used in core/train_model.py
+    so training data and predictions stay on the same scale.
     """
-    sloc = features.get("sloc", 10)
-    loop_count = features.get("loop_count", 0)
+    sloc      = features.get("sloc", 10)
     max_depth = features.get("max_loop_depth", 0)
-    nested = features.get("nested_loop_count", 0)
-    complexity = features.get("avg_complexity", 1)
-    io_ops = features.get("io_operations", 0)
+    loop_count= features.get("loop_count", 0)
+    io_ops    = features.get("io_operations", 0)
     net_calls = features.get("network_calls", 0)
+    complexity= features.get("avg_complexity", 1.0)
     intensity = features.get("computational_intensity", 10)
 
-    # Base time: assume ~0.001s per SLOC for simple sequential code
+    # Base time: ~1ms per source line
     base_time = sloc * 0.001
 
-    # Loop multiplier: nested loops are exponentially more expensive
+    # Loop factor: quadratic depth scaling (NOT exponential)
+    # depth=1 → ×3.5   depth=2 → ×11   depth=3 → ×23.5 (capped ×20)
     loop_factor = 1.0
     if loop_count > 0:
-        # Assume ~100 iterations per loop level
-        loop_factor = max(1.0, (100 ** max_depth) * 0.00001)
-        loop_factor = min(loop_factor, 300.0)  # cap at 5 minutes
+        loop_factor = 1.0 + (max_depth * max_depth * 2.5)
+        loop_factor = min(loop_factor, 20.0)
 
-    # I/O factor: each I/O op adds ~10ms, network adds ~100ms
-    io_time = io_ops * 0.01 + net_calls * 0.1
+    # I/O and network latency
+    io_time = io_ops * 0.01 + net_calls * 0.08
 
-    # Complexity scaling
-    complexity_factor = 1.0 + (complexity - 1) * 0.1
+    # Gentle complexity and intensity scaling
+    complexity_factor = 1.0 + (complexity - 1) * 0.05
+    intensity_factor  = 1.0 + intensity / 200.0
 
-    estimated = (base_time * loop_factor * complexity_factor) + io_time
+    estimated = (base_time * loop_factor * complexity_factor * intensity_factor) + io_time
 
-    # Scale by intensity
-    estimated *= (1.0 + intensity / 100.0)
-
-    return max(0.001, round(estimated, 6))
+    # Hard cap: realistic snippet runtime is 0.001s – 10s
+    return max(0.001, min(round(estimated, 6), 10.0))
 
 
 def estimate_power_watts(features: dict) -> dict:

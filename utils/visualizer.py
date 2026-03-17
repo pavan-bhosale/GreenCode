@@ -56,10 +56,28 @@ def plot_carbon_pie(breakdown_pct: dict, total_carbon_g: float) -> go.Figure:
     labels = list(breakdown_pct.keys())
     values = [(v / 100) * total_carbon_g for v in breakdown_pct.values()]
     colors = [COLORS.get(label, "#999999") for label in labels]
-    
+
+    # Guard: if all values are effectively zero, return a fallback figure
+    if sum(values) < 1e-12:
+        fig = go.Figure()
+        fig.update_layout(
+            title=dict(text="Carbon Contribution", font=dict(color="#e8f0ea", family="Syne")),
+            annotations=[dict(
+                text="No measurable carbon<br>emissions for this snippet",
+                x=0.5, y=0.5, xref="paper", yref="paper",
+                showarrow=False,
+                font=dict(color="#6b8870", family="DM Mono", size=14),
+            )],
+            margin=dict(l=20, r=20, t=40, b=20),
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            height=300,
+        )
+        return fig
+
     fig = go.Figure(data=[
         go.Pie(
-            labels=labels, 
+            labels=labels,
             values=values,
             hole=.4,
             marker=dict(colors=colors, line=dict(color="#090e0a", width=2)),
@@ -67,7 +85,7 @@ def plot_carbon_pie(breakdown_pct: dict, total_carbon_g: float) -> go.Figure:
             textfont=dict(color="#e8f0ea", family="DM Mono"),
         )
     ])
-    
+
     fig.update_layout(
         title=dict(text="Carbon Contribution", font=dict(color="#e8f0ea", family="Syne")),
         margin=dict(l=20, r=20, t=40, b=20),
@@ -76,7 +94,7 @@ def plot_carbon_pie(breakdown_pct: dict, total_carbon_g: float) -> go.Figure:
         height=300,
         showlegend=False
     )
-    
+
     return fig
 
 
